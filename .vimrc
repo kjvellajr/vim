@@ -9,6 +9,12 @@ let g:solarized_termtrans=1
 let g:solarized_visibility="low"
 set background=dark
 colorscheme solarized
+
+" bind nerdtree to ctrl+n
+nmap <C-n> :NERDTreeToggle<CR>
+
+" search by smartcase instead of always using correct capitolization
+set smartcase
 	
 " invisible character colors 
 "highlight NonText ctermfg=LightGrey guifg=LightGrey
