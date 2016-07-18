@@ -2,13 +2,10 @@
 runtime bundle/vim-pathogen/autoload/pathogen.vim
 execute pathogen#infect()
 
-" solarized color scheme
-syntax enable
-let g:solarized_termcolors=256
-let g:solarized_termtrans=1
-let g:solarized_visibility="low"
-set background=dark
-colorscheme solarized
+" setup swap files to a temp directory instead of always next to the file
+" being edited
+set swapfile
+set dir=~/tmp
 
 " bind nerdtree to ctrl+n
 nmap <C-n> :NERDTreeToggle<CR>
@@ -22,16 +19,17 @@ set smartcase
 
 " use symbols to represent whitespace
 set list
-set listchars=tab:▸\ ,eol:¬
-
-"vim-airline setup
-set laststatus=2
-
-" you complete me config for C family 
-let g:ycm_global_ycm_extra_conf = "~/.vim/.ycm_extra_conf.py"
+set listchars=tab:?\ ,eol:¬
 
 " add line numbers
 set number
+
+" set default window size
+set lines=35 columns=150
+
+" set smartcase searching 
+:set ignorecase
+:set smartcase
 
 " use tabs by default as 4 spaces
 set ts=4 sts=4 sw=4 noexpandtab
@@ -75,103 +73,66 @@ endif
 let mapleader = ","
 nmap <leader>v :tabedit $MYVIMRC<CR>
 
-
-
-
-" An example for a vimrc file.
-"
-" Maintainer:	Bram Moolenaar <Bram@vim.org>
-" Last change:	2014 Feb 05
-"
-" To use it, copy it to
-"     for Unix and OS/2:  ~/.vimrc
-"	      for Amiga:  s:.vimrc
-"  for MS-DOS and Win32:  $VIM\_vimrc
-"	    for OpenVMS:  sys$login:.vimrc
-
-" When started as "evim", evim.vim will already have done these settings.
-if v:progname =~? "evim"
-  finish
-endif
+" macro to format AccuRev change copy+paste, to use @s
+let @s = ':g/^\s*$/d
+:%normal @l
+:%sort i
+:%normal @k
+gg' 
+let @a = ':g/^\s*$/d
+:%normal @j
+:%sort i
+:%normal @k
+gg' 
+let @l = '0WWDx?\
+lD0Pj' " remove extra content for quick view
+let @k = '0Wi€kb40a 040ldt\j' " tab all second WORD by 40 chars
+let @j = '0WWWblD0xj' " remove extra content for history view
+" macro to delete second WORD from line
+let @d = '0WbelDj'
 
 " Use Vim settings, rather than Vi settings (much better!).
 " This must be first, because it changes other options as a side effect.
 set nocompatible
+source $VIMRUNTIME/vimrc_example.vim
+source $VIMRUNTIME/mswin.vim
+behave mswin
+
+" use ctrl-a for number increment instead of windows select all
+nunmap <C-a>
+
+" map // in visual mode to find currend selection
+vnoremap // y/<C-R>"<CR>
+
+set diffexpr=MyDiff()
+function MyDiff()
+   let opt = '-a --binary '
+   if &diffopt =~ 'icase' | let opt = opt . '-i ' | endif
+   if &diffopt =~ 'iwhite' | let opt = opt . '-b ' | endif
+   let arg1 = v:fname_in
+   if arg1 =~ ' ' | let arg1 = '"' . arg1 . '"' | endif
+   let arg2 = v:fname_new
+   if arg2 =~ ' ' | let arg2 = '"' . arg2 . '"' | endif
+   let arg3 = v:fname_out
+   if arg3 =~ ' ' | let arg3 = '"' . arg3 . '"' | endif
+   if $VIMRUNTIME =~ ' '
+     if &sh =~ '\<cmd'
+       if empty(&shellxquote)
+         let l:shxq_sav = ''
+         set shellxquote&
+       endif
+       let cmd = '"' . $VIMRUNTIME . '\diff"'
+     else
+       let cmd = substitute($VIMRUNTIME, ' ', '" ', '') . '\diff"'
+     endif
+   else
+     let cmd = $VIMRUNTIME . '\diff'
+   endif
+   silent execute '!' . cmd . ' ' . opt . arg1 . ' ' . arg2 . ' > ' . arg3
+   if exists('l:shxq_sav')
+     let &shellxquote=l:shxq_sav
+   endif
+ endfunction
 
 " allow backspacing over everything in insert mode
 set backspace=indent,eol,start
-
-if has("vms")
-  set nobackup		" do not keep a backup file, use versions instead
-else
-  set backup		" keep a backup file (restore to previous version)
-  set undofile		" keep an undo file (undo changes after closing)
-endif
-set history=50		" keep 50 lines of command line history
-set ruler		" show the cursor position all the time
-set showcmd		" display incomplete commands
-set incsearch		" do incremental searching
-
-" For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
-" let &guioptions = substitute(&guioptions, "t", "", "g")
-
-" Don't use Ex mode, use Q for formatting
-map Q gq
-
-" CTRL-U in insert mode deletes a lot.  Use CTRL-G u to first break undo,
-" so that you can undo CTRL-U after inserting a line break.
-inoremap <C-U> <C-G>u<C-U>
-
-" In many terminal emulators the mouse works just fine, thus enable it.
-if has('mouse')
-  set mouse=a
-endif
-
-" Switch syntax highlighting on, when the terminal has colors
-" Also switch on highlighting the last used search pattern.
-if &t_Co > 2 || has("gui_running")
-  syntax on
-  set hlsearch
-endif
-
-" Only do this part when compiled with support for autocommands.
-if has("autocmd")
-
-  " Enable file type detection.
-  " Use the default filetype settings, so that mail gets 'tw' set to 72,
-  " 'cindent' is on in C files, etc.
-  " Also load indent files, to automatically do language-dependent indenting.
-  filetype plugin indent on
-
-  " Put these in an autocmd group, so that we can delete them easily.
-  augroup vimrcEx
-  au!
-
-  " For all text files set 'textwidth' to 78 characters.
-  autocmd FileType text setlocal textwidth=78
-
-  " When editing a file, always jump to the last known cursor position.
-  " Don't do it when the position is invalid or when inside an event handler
-  " (happens when dropping a file on gvim).
-  " Also don't do it when the mark is in the first line, that is the default
-  " position when opening a file.
-  autocmd BufReadPost *
-    \ if line("'\"") > 1 && line("'\"") <= line("$") |
-    \   exe "normal! g`\"" |
-    \ endif
-
-  augroup END
-
-else
-
-  set autoindent		" always set autoindenting on
-
-endif " has("autocmd")
-
-" Convenient command to see the difference between the current buffer and the
-" file it was loaded from, thus the changes you made.
-" Only define it when not defined already.
-if !exists(":DiffOrig")
-  command DiffOrig vert new | set bt=nofile | r ++edit # | 0d_ | diffthis
-		  \ | wincmd p | diffthis
-endif
